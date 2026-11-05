@@ -1,0 +1,88 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #111827;
+    background: #f8fafc;
+    font-family:
+      "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: #f8fafc;
+    font-family:
+      "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.admin-route-pin {
+  display: grid;
+  height: 1.75rem;
+  width: 1.75rem;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: var(--admin-pin-color, #007A24);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgb(15 23 42 / 0.2), 0 0 0 4px var(--admin-pin-glow, rgb(0 122 36 / 0.18));
+}
+
+.admin-route-pin-preview {
+  background: var(--admin-pin-color, #111827);
+  box-shadow: 0 12px 24px rgb(15 23 42 / 0.22), 0 0 0 4px var(--admin-pin-glow, rgb(0 122 36 / 0.3));
+}
+
+.admin-map-tiles-green {
+  filter: hue-rotate(74deg) saturate(1.42) brightness(1.03);
+}
+
+.admin-map-tiles-warm {
+  filter: sepia(0.34) saturate(1.18) brightness(1.04);
+}
+
+.admin-map-tiles-dark {
+  filter: saturate(1.08) brightness(1.08);
+}

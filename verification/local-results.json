@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-29",
+  "public_build": "passed",
+  "admin_build": "passed",
+  "admin_lint": "passed",
+  "tests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "sql_engine": "PGlite PostgreSQL (Supabase Auth/Storage system objects simulated)",
+  "sql_setup_reapplication": "passed before and after test data",
+  "optional_top_cloud_seed": "9 tours; repeatability passed",
+  "cloudflare_functions_compilation": {
+    "public": "passed",
+    "admin": "passed",
+    "wrangler": "4.155.0"
+  },
+  "dependency_audit": {
+    "public": 0,
+    "admin": 0
+  },
+  "references": {
+    "identical_file_contents": 288,
+    "path_differences": 1,
+    "details": "Original public asset filename differs; see INTEGRATION_REPORT.md"
+  },
+  "live_supabase": "not configured or tested",
+  "live_cloudflare": "not deployed or tested",
+  "browser_qa": "tool stopped: current Chrome URL could not be determined reliably"
+}
