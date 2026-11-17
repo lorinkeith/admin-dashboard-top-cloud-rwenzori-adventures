@@ -8,7 +8,7 @@ Create two **Pages** projects in Cloudflare Workers & Pages. With a monorepo con
 
 | Setting | Public website | Admin dashboard |
 | --- | --- | --- |
-| Root directory | `top-cloud-rwenzori-adventures` | `top-cloud-rwenzori-adventures-admin-dashboard` |
+| Root directory | `top-cloud-rwenzori-adventures` | `admin-dashboard-top-cloud-rwenzori-adventures` |
 | Build command | `npm run build` | `npm run build` |
 | Output directory, relative to root | `dist` | `dist` |
 | Node version | `22` (see `.node-version`) | `22` (see `.node-version`) |
@@ -46,15 +46,30 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_NEW_TOP_CLOUD_KEY
 
 Set these in the project's Variables and Secrets settings for the appropriate production/preview environment. The Supabase key here is public. No service-role key or Supabase secret key is needed. Restrict production-connected previews to trusted administrators, or use a separate staging Supabase project for previews. Do not populate a preview with Uganda credentials.
 
-Optional **public-site runtime secrets/settings** for notification email:
+## Public-site SMTP runtime settings
+
+Both inquiry forms and the booking form POST to `/api/contact`. The Function saves each request in Supabase `form_submissions`, then sends its details to the configured mailbox. The dashboard filters the same table into Inquiries and Bookings. Both hosting projects must use the same Supabase project.
+
+Set these values on the public website's Cloudflare Pages project under Variables and Secrets for each deployed environment.
 
 | Variable | Value |
 | --- | --- |
-| `RESEND_API_KEY` | Secret configured in Cloudflare |
-| `RESEND_FROM_EMAIL` | Sender verified with your email provider |
-| `CONTACT_EMAIL` | `info@topcloudrwenzoriadventures.com`, once the mailbox is configured |
+| `SMTP_HOST` | `mail.topcloudtours.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | `info@topcloudtours.com` |
+| `SMTP_PASSWORD` | Exact mailbox password, stored as a secret |
+| `SMTP_FROM_EMAIL` | `Top Cloud Tours <info@topcloudtours.com>` |
+| `CONTACT_RECIPIENT_EMAILS` | `info@topcloudtours.com` |
 
-Use Cloudflare secret storage for the email API key. Do not prefix it with `VITE_`. Email failure does not lose a saved submission. Leave frontend endpoint overrides blank: `/api/contact` and `/api/fetch-tripadvisor-reviews` are same-origin routes on their respective applications.
+Cloudflare field values use the literal password, including every `#` and `&`, with no wrapping quotes or HTML decoding. Local `.env` and `.dev.vars` passwords containing `#` require wrapping quotes. Use the sender exactly as shown, with no backslash before `<`. All SMTP variables are server-side. Keep their names free of the `VITE_` prefix.
+
+The public project's `wrangler.toml` enables `nodejs_compat` for Nodemailer. Port 587 requires STARTTLS and validates the mail server's certificate. Port 465 uses implicit TLS when explicitly configured. SMTP takes precedence when SMTP credentials are present. The existing Resend transport remains available when SMTP is absent.
+
+Leave `VITE_CONTACT_API_URL` blank for the same-origin endpoint. A saved submission remains available in the dashboard if notification delivery fails. The API returns `saved` and `notificationSent`, and the form reports the notification failure alongside confirmation that the request was saved.
+
+### Mail DNS check on 17 November 2026
+
+`mail.topcloudtours.com` resolved to `104.21.25.195` and `172.67.134.129`, which are Cloudflare proxy addresses. TCP connections to ports 587 and 465 timed out. Set the `mail` DNS record to **DNS only** and point it to the mail provider's real server address, or use the provider's direct SMTP hostname. The server must allow port 587 and present a valid certificate for the configured hostname. Authentication and inbox delivery remain unverified until this is corrected. See [Cloudflare email troubleshooting](https://developers.cloudflare.com/dns/troubleshooting/email-issues/).
 
 ## Deploy Functions as well as static assets
 

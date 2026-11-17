@@ -4,7 +4,7 @@ Both applications now have synchronized frontend and server Supabase variables i
 
 ## Finish your current setup
 
-**Contact inquiry update:** Contact-page and popup inquiries now insert directly into `form_submissions` through the public website's Supabase client, with `type = 'inquiry'`. The anonymous insert policy keeps these records private and the dashboard's Inquiries filter displays them to administrators. Inquiry saving requires the two `VITE_SUPABASE_*` settings and no contact server or email credentials. These direct inquiry saves do not send email notifications. Booking requests continue to use `/api/contact` and its server settings. A labeled “Contact form integration test” inquiry was successfully saved using the current submission code.
+**Contact delivery update:** Both inquiry forms and bookings submit through the public website `/api/contact` Pages Function. It inserts into `form_submissions` and sends SMTP notifications. The dashboard displays the saved records under Inquiries or Bookings. Configure the public Function runtime Supabase settings and all six SMTP settings documented in CLOUDFLARE_DEPLOYMENT_GUIDE.md. Mail-server DNS currently prevents SMTP verification. See that guide for the required DNS correction.
 
 1. Open **your configured Top Cloud project** in Supabase, then **SQL Editor**. Paste and run the entire [`supabase/RUN_THIS_SETUP.sql`](supabase/RUN_THIS_SETUP.sql). It bundles files 01–05 below into one transaction. Use either the bundle or the numbered files. The publishable key cannot create tables; this step runs in SQL Editor under your project owner account.
 2. To keep the website's existing nine starter tours, run [`supabase/setup/06_optional_top_cloud_tours.sql`](supabase/setup/06_optional_top_cloud_tours.sql). Otherwise the connected public catalogue stays empty until you publish tours in the dashboard.
@@ -14,7 +14,7 @@ Both applications now have synchronized frontend and server Supabase variables i
 6. Restart both development servers: website `npm run dev -- --port 5180`, dashboard `npm run dev -- --port 5181`, each from its own folder. Sign into the dashboard with your Auth user's email and password.
 7. Create a draft tour with an image, itinerary and route point. Confirm it is hidden publicly, then publish and reload the website. Edit and publish homepage content and confirm the website changes. Send a test inquiry and booking from the public website, confirm both appear in the dashboard, then mark them processed. Confirm analytics update after visiting a published tour. These are deliberate manual tests; the connection checker creates no records.
 
-For deployment, set all four Supabase variables in **both hosting projects**, including runtime variables for the Pages Functions; local `.env` files are not deployed. Keep contact/review API URLs empty for same-origin endpoints. Build and redeploy after changing `VITE_*` values. Optional email notifications also need `CONTACT_EMAIL`, a verified `RESEND_FROM_EMAIL`, and `RESEND_API_KEY` on the website's server. Existing email settings were retained; email delivery has not been tested.
+For deployment, set all four Supabase variables in **both hosting projects**, including runtime variables for the Pages Functions; local `.env` files are not deployed. Keep contact/review API URLs empty for same-origin endpoints. Build and redeploy after changing `VITE_*` values. Email notifications use SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL, and CONTACT_RECIPIENT_EMAILS on the public website runtime. See CLOUDFLARE_DEPLOYMENT_GUIDE.md for setup and the outstanding mail DNS issue.
 
 The combined SQL targets a fresh or compatible Top Cloud schema. If you already ran different migrations and see a missing-column or incompatible-function error, keep the exact error and reconcile that schema before rerunning. Do not reset an existing database to make setup pass.
 
@@ -122,9 +122,12 @@ Add those two server variables to **both projects**: the public site's contact e
 Optional public-site email notifications use server-only variables:
 
 ```env
-RESEND_API_KEY=YOUR_RESEND_API_KEY
-RESEND_FROM_EMAIL=Top Cloud Rwenzori Adventures <YOUR_VERIFIED_SENDER>
-CONTACT_EMAIL=info@topcloudrwenzoriadventures.com
+SMTP_HOST=mail.topcloudtours.com
+SMTP_PORT=587
+SMTP_USER=info@topcloudtours.com
+SMTP_PASSWORD="YOUR_EXACT_MAILBOX_PASSWORD"
+SMTP_FROM_EMAIL="Top Cloud Tours <info@topcloudtours.com>"
+CONTACT_RECIPIENT_EMAILS=info@topcloudtours.com
 ```
 
 Configure your verified sending domain/address with Resend. The named mailbox must exist independently. Database storage is authoritative: if email is not configured or fails, a successfully saved submission still returns success and remains visible in the dashboard. If database storage fails, the endpoint returns an error. Old recipient variable aliases are intentionally ignored.
