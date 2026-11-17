@@ -18,6 +18,63 @@ const inquiry = { formType: 'inquiry', fullName: 'Visitor', email: 'visitor@exam
 const booking = { ...inquiry, formType: 'booking', selectedTour: 'Rwenzori', country: 'Uganda', travelDate: '2027-01-10', adults: 2, children: 1, notes: 'Window seat' }
 const request = body => new Request('https://example.invalid/api/contact', { method: 'POST', body: JSON.stringify(body) })
 
+test('configured Resend sends both forms even when SMTP credentials are present', async () => {
+  const originalFetch = globalThis.fetch
+  const originalTransport = nodemailer.createTransport
+  const messages = []
+  const order = []
+  const resendEnv = { ...env, RESEND_API_KEY: 're_test', RESEND_FROM_EMAIL: 'Top Cloud Tours <info@topcloudtours.com>' }
+  nodemailer.createTransport = () => { assert.fail('Resend configuration must bypass SMTP') }
+  globalThis.fetch = async (url, init) => {
+    if (url === 'https://api.resend.com/emails') {
+      order.push('email')
+      assert.equal(init.headers.Authorization, 'Bearer re_test')
+      messages.push(JSON.parse(init.body))
+      return Response.json({ id: 'test-message-id' })
+    }
+    assert.ok(url.endsWith('/rest/v1/form_submissions'))
+    order.push('save')
+    return new Response(null, { status: 201 })
+  }
+  try {
+    for (const body of [inquiry, booking]) {
+      const response = await onRequestPost({ request: request(body), env: resendEnv })
+      assert.equal((await response.json()).notificationSent, true)
+    }
+    assert.deepEqual(order, ['save', 'email', 'save', 'email'])
+    for (const message of messages) {
+      assert.equal(message.from, 'Top Cloud Rwenzori Adventures <info@topcloudtours.com>')
+      assert.deepEqual(message.to, [env.CONTACT_RECIPIENT_EMAILS])
+      assert.equal(message.reply_to, inquiry.email)
+    }
+    assert.ok(messages[1].text.includes(booking.notes))
+    await onRequestPost({ request: request(inquiry), env: { ...resendEnv, RESEND_FROM_EMAIL: 'Top Cloud Tours <onboarding@resend.dev>' } })
+    assert.ok(messages[2].from.endsWith('<info@topcloudtours.com>'))
+  } finally {
+    globalThis.fetch = originalFetch
+    nodemailer.createTransport = originalTransport
+  }
+})
+
+test('Resend rejection preserves the saved request and does not start a second delivery', async () => {
+  const originalFetch = globalThis.fetch
+  const originalTransport = nodemailer.createTransport
+  nodemailer.createTransport = () => { assert.fail('A Resend failure must not start SMTP delivery') }
+  globalThis.fetch = async url => url === 'https://api.resend.com/emails'
+    ? Response.json({ message: 'Private provider details' }, { status: 403 })
+    : new Response(null, { status: 201 })
+  try {
+    const response = await onRequestPost({ request: request(inquiry), env: { ...env, RESEND_API_KEY: 're_test' } })
+    const result = await response.json()
+    assert.equal(result.saved, true)
+    assert.equal(result.notificationSent, false)
+    assert.ok(!JSON.stringify(result).includes('Private provider details'))
+  } finally {
+    globalThis.fetch = originalFetch
+    nodemailer.createTransport = originalTransport
+  }
+})
+
 test('SMTP preserves literal passwords and configures encrypted ports and recipients', () => {
   const config = getSmtpConfig(env)
   assert.equal(config.options.auth.pass, env.SMTP_PASSWORD)
